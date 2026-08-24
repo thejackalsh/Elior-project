@@ -118,11 +118,10 @@ Siapkan database dulu:
 
 ```sh
 createdb eliordb
-psql -d eliordb -f migrations/001_init.sql
-psql -d eliordb -f migrations/002_onboarding_feedback.sql
-psql -d eliordb -f migrations/003_feedback_scale5_tam.sql
-psql -d eliordb -f migrations/004_settings_ping.sql
+psql -d eliordb -f migrations/schema.sql
 ```
+
+Satu file, sekali jalan — tidak ada urutan migrasi yang perlu diikuti. Aman diulang.
 
 Isi `.env`:
 

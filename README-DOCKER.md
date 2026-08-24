@@ -103,10 +103,10 @@ TOKEN=<isi access_token>
 curl http://localhost:8080/users/me -H "Authorization: Bearer $TOKEN"
 ```
 
-Skema database ter-apply otomatis saat container `db` pertama dibuat — file di `elior-backend-go/migrations/` (001 → 004) dijalankan berurutan.
+Skema database ter-apply otomatis saat container `db` pertama dibuat, dari satu file: `elior-backend-go/migrations/schema.sql`. Tidak ada urutan migrasi yang perlu diurus.
 
 > **Skema tidak ter-apply / ingin mengulang dari nol?**
-> Skrip migrasi hanya jalan saat volume database masih kosong.
+> Skrip hanya jalan saat volume database masih kosong.
 > ```sh
 > docker compose down -v      # -v menghapus volume, DATA HILANG
 > docker compose up -d db backend
@@ -302,17 +302,17 @@ Penyebab tersering:
 <details>
 <summary><b>Tabel tidak ada</b> — <code>relation "users" does not exist</code></summary>
 
-Skrip migrasi hanya jalan saat volume database masih kosong. Kalau volume sudah pernah dibuat sebelum migrasi lengkap:
+`schema.sql` hanya dijalankan saat volume database masih kosong. Kalau volume sudah terlanjur dibuat sebelum skema masuk:
 
 ```sh
 docker compose down -v
 docker compose up -d db backend
 ```
 
-`-v` menghapus data. Untuk apply manual tanpa menghapus:
+`-v` menghapus data. Untuk apply manual tanpa menghapus apa pun (skrip idempotent, aman diulang):
 
 ```sh
-docker compose exec -T db psql -U elior -d eliordb < elior-backend-go/migrations/001_init.sql
+docker compose exec -T db psql -U elior -d eliordb < elior-backend-go/migrations/schema.sql
 ```
 </details>
 

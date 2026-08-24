@@ -1,0 +1,54 @@
+# ── Env & kredensial ───────────────────────────────────────────────────────
+.env
+.env.local
+.env.development
+.env.production
+*.env
+# .env.example WAJIB ikut ke repo (aturan di atas jangan sampai menutupinya)
+!.env.example
+!**/.env.example
+
+# Firebase: tester membuat project sendiri
+google-services.json
+GoogleService-Info.plist
+
+# ── Node ───────────────────────────────────────────────────────────────────
+node_modules/
+.next/
+dist/
+build/
+.expo/
+*.tsbuildinfo
+
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── Android ────────────────────────────────────────────────────────────────
+*.keystore
+*.jks
+android/.gradle/
+android/app/build/
+
+# ── Bobot model besar (ambil dari HuggingFace, jangan taruh di git) ─────────
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+elior-inference/models/
+
+# TFLite di-block global, KECUALI model mobile yang wajib ada untuk build APK
+*.tflite
+!elior-mobile/assets/models/*.tflite
+
+# ── EAS / OTA (tester pakai akun Expo sendiri) ──────────────────────────────
+eas.json
+
+# ── Misc ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+*.zip

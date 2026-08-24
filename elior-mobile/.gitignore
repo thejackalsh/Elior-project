@@ -1,0 +1,31 @@
+# Expo
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.keystore
+*.jks
+
+# Env & credentials — JANGAN dicommit
+.env
+.env.*
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# .env.example wajib ikut ke repo (template konfigurasi, bukan rahasia)
+!.env.example

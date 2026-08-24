@@ -1,0 +1,85 @@
+{
+  "expo": {
+    "name": "Elior",
+    "slug": "elior",
+    "version": "1.0.10",
+    "runtimeVersion": "1.0.10",
+    "orientation": "portrait",
+    "scheme": "elior",
+    "icon": "./assets/app-icon.png",
+    "splash": {
+      "image": "./assets/app-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "android": {
+      "package": "com.elior.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK"
+      ]
+    },
+    "assetBundlePatterns": [
+      "assets/**"
+    ],
+    "plugins": [
+      "expo-router",
+      "react-native-fast-tflite",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermission": "Izinkan ELIOR mengakses kamera untuk memindai objek.",
+          "enableFrameProcessors": true,
+          "enableLocation": false
+        }
+      ],
+      "expo-updates",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/app-icon.png",
+          "imageWidth": 180
+        }
+      ],
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Izinkan ELIOR mengakses kamera untuk memindai objek."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Izinkan ELIOR mengakses mikrofon untuk pengenalan suara."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Izinkan ELIOR menyimpan gambar hasil ke galeri.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
+    ],
+    "extra": {
+      "router": {}
+    },
+    "ios": {
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
+        "NSMicrophoneUsageDescription": "Izinkan ELIOR mengakses mikrofon untuk pengenalan suara."
+      }
+    }
+  }
+}

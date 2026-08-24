@@ -1,0 +1,91 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-elior}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elior}
+      POSTGRES_DB: ${POSTGRES_DB:-eliordb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Skrip di folder ini dijalankan Postgres berurutan (001, 002, 003, 004)
+      # HANYA saat volume masih kosong. Untuk mengulang: docker compose down -v
+      - ./elior-backend-go/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elior} -d ${POSTGRES_DB:-eliordb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./elior-backend-go
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-elior}:${POSTGRES_PASSWORD:-elior}@db:5432/${POSTGRES_DB:-eliordb}
+      DATABASE_SSL: "false"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET wajib diisi di .env, minimal 32 karakter}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      UPLOAD_DIR: /data/uploads
+      PORT: "8080"
+      BIND_ADDR: 0.0.0.0
+      # Kosongkan untuk mematikan server admin (panel admin tidak ikut repo ini).
+      ADMIN_BIND: ${ADMIN_BIND:-}
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/data/uploads
+
+  inference:
+    build: ./elior-inference
+    # Profil `ai`: berat (Qwen2.5-VL-3B ~7GB ter-download saat start pertama),
+    # jadi tidak ikut `docker compose up` biasa.
+    profiles: ["ai"]
+    environment:
+      # Matikan jalur ZeroGPU — modul `spaces` hanya ada di HuggingFace.
+      ELIOR_ZEROGPU: "0"
+      HF_HOME: /root/.cache/huggingface
+    ports:
+      - "7860:7860"
+    volumes:
+      # Cache model supaya download 7GB tidak terulang setiap container dibuat ulang.
+      - hfcache:/root/.cache/huggingface
+    # ── GPU NVIDIA ────────────────────────────────────────────────────────────
+    # Butuh nvidia-container-toolkit terpasang di host. Tanpa blok ini container
+    # tetap jalan di CPU, tapi ~30-60 detik per gambar.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  proxy:
+    build: ./elior-proxy
+    environment:
+      # Default menunjuk ke container inference. Ganti ke Space HuggingFace
+      # milikmu sendiri kalau ingin inference remote (lihat README-DOCKER.md).
+      GRADIO_SPACE_URL: ${GRADIO_SPACE_URL:-http://inference:7860}
+      # Hanya perlu kalau GRADIO_SPACE_URL menunjuk ke *.hf.space
+      HF_TOKEN: ${HF_TOKEN:-}
+    ports:
+      - "7861:7860"
+
+  web:
+    build:
+      context: ./elior-web
+      args:
+        # NEXT_PUBLIC_* dibakar saat build, bukan runtime — ubah nilai ini lalu
+        # `docker compose build web` supaya perubahan benar-benar masuk.
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8080}
+        NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY:-}
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  uploads:
+  hfcache:

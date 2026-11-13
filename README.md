@@ -1,14 +1,12 @@
 <div align="center">
 
-<img src="elior-mobile/assets/app-icon.png" width="130" alt="ELIOR" />
+<br>
 
-# ELIOR
+<img src="assets/header.svg" alt="ELIOR, asisten penglihatan berbasis AI untuk tunanetra" width="800">
 
-**Asisten penglihatan berbasis AI untuk tunanetra di Indonesia**
+<br><br>
 
-Kamera jadi mata. Deteksi objek, baca teks, kenali nominal rupiah — semua dinarasikan dalam Bahasa Indonesia.
-
-<br/>
+Kamera jadi mata. Deteksi objek, baca teks, kenali nominal rupiah, semua dinarasikan dalam Bahasa Indonesia.
 
 ![Status](https://img.shields.io/badge/status-aktif-E0B374?style=for-the-badge&labelColor=0D0D0D)
 ![Platform](https://img.shields.io/badge/platform-Android-E0B374?style=for-the-badge&labelColor=0D0D0D)
@@ -21,7 +19,7 @@ Kamera jadi mata. Deteksi objek, baca teks, kenali nominal rupiah — semua dina
 ![TFLite](https://img.shields.io/badge/TFLite-MobileNetV4-E0B374?style=flat-square&labelColor=0D0D0D)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-E0B374?style=flat-square&labelColor=0D0D0D)
 
-<br/>
+<br>
 
 **Mau langsung jalan tanpa install apa-apa?** → **[README-DOCKER.md](README-DOCKER.md)**
 
@@ -29,22 +27,19 @@ Kamera jadi mata. Deteksi objek, baca teks, kenali nominal rupiah — semua dina
 
 ---
 
-## Tentang
+### ◼ TENTANG
 
-ELIOR membantu pengguna tunanetra memahami lingkungan sekitar lewat kamera ponsel. Empat mode utama, semuanya bersuara Bahasa Indonesia:
+Empat mode utama, semuanya bersuara Bahasa Indonesia. Mode uang dan baca jalan penuh **tanpa internet**.
 
-| Mode | Fungsi | Dijalankan di |
-|:--|:--|:--|
-| **Objek** | Deteksi objek + narasi deskriptif | Server (YOLOv11 → Qwen2.5-VL) |
-| **Uang** | Kenali nominal rupiah (11 kelas, kertas + koin) | **On-device** (MobileNetV4 TFLite) |
-| **Baca** | OCR teks dari kamera | **On-device** (ML Kit) |
-| **Memori** | Simpan & putar ulang hasil pindaian | Server (PostgreSQL) |
+<div align="center">
 
-Mode uang dan baca jalan penuh **tanpa internet** — pengguna tidak selalu punya koneksi stabil.
+<img src="assets/modes.svg" alt="Empat mode: Objek (server, YOLOv11 ke Qwen2.5-VL), Uang (on-device, MobileNetV4 TFLite), Baca (on-device, ML Kit), Memori (server, PostgreSQL)" width="800">
+
+</div>
 
 ---
 
-## Arsitektur
+### ◼ ARSITEKTUR
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#E0B374','primaryTextColor':'#0D0D0D','primaryBorderColor':'#8C6A3F','lineColor':'#E0B374','secondaryColor':'#2A2A2A','secondaryTextColor':'#E0B374','tertiaryColor':'#1A1A1A','tertiaryTextColor':'#E0B374','fontFamily':'ui-sans-serif, system-ui, sans-serif'}}}%%
@@ -68,16 +63,16 @@ flowchart TD
     style D fill:#2A2A2A,stroke:#E0B374,color:#E0B374
 ```
 
-**Kenapa ada proxy?** Aplikasi mobile tidak boleh memegang token HuggingFace. Proxy yang menyimpan token dan meneruskan permintaan; mobile hanya bicara ke proxy. Proxy juga menerjemahkan REST sederhana (`POST /analyze`) menjadi protokol Gradio yang dua langkah.
+**Kenapa ada proxy?** Aplikasi mobile tidak boleh memegang token HuggingFace. Proxy menyimpan token dan meneruskan permintaan, sekaligus menerjemahkan `POST /analyze` menjadi protokol Gradio dua langkah.
 
 ---
 
-## Struktur Repo
+### ◼ STRUKTUR REPO
 
 | Folder | Isi | Stack |
 |:--|:--|:--|
 | [`elior-mobile/`](elior-mobile) | Aplikasi Android | React Native, Expo, Vision Camera, fast-tflite |
-| [`elior-backend-go/`](elior-backend-go) | REST API — auth, riwayat, config | Go 1.22, Gin, pgx |
+| [`elior-backend-go/`](elior-backend-go) | REST API: auth, riwayat, config | Go 1.22, Gin, pgx |
 | [`elior-web/`](elior-web) | Landing page | Next.js 15, Tailwind |
 | [`elior-inference/`](elior-inference) | Server inference objek | Gradio, YOLOv11, Qwen2.5-VL |
 | [`elior-proxy/`](elior-proxy) | Proxy penyembunyi token | FastAPI, httpx |
@@ -85,12 +80,42 @@ flowchart TD
 
 ---
 
-## Menjalankan Secara Lokal
+### ◼ MODEL
+
+| Model | Tugas | Diambil dari |
+|:--|:--|:--|
+| MobileNetV4 localizer v4 | Bounding box uang | `elior-mobile/assets/models/` (di repo) |
+| MobileNetV4 classifier v16 | Nominal rupiah, 11 kelas | `elior-mobile/assets/models/` (di repo) |
+| YOLOv11n | Deteksi objek umum (COCO) | [`arkhangelos/elior-yolo`](https://huggingface.co/arkhangelos/elior-yolo) |
+| Qwen2.5-VL-3B | Caption Bahasa Indonesia | HuggingFace Hub |
+| BLIP-2 (fine-tuned) | Caption, pendekatan sebelumnya | [`arkhangelos/blip2-elior-fp16`](https://huggingface.co/arkhangelos/blip2-elior-fp16) |
+
+Dua model TFLite ikut di repo (~35MB) karena APK tidak bisa dibuild tanpanya. Bobot besar lain diambil dari HuggingFace saat runtime. API key di notebook sudah dikosongkan, isi sendiri sebelum menjalankan.
+
+Mode uang berjalan dua tahap, sepenuhnya on-device, lewat frame processor worklet (`runAtTargetFps(10)`):
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#E0B374','primaryTextColor':'#0D0D0D','primaryBorderColor':'#8C6A3F','lineColor':'#E0B374','secondaryColor':'#2A2A2A','tertiaryColor':'#1A1A1A','fontFamily':'ui-sans-serif, system-ui, sans-serif'}}}%%
+flowchart LR
+    F["Frame kamera"] --> L["Localizer v4<br/>single-class bbox"]
+    L --> C["Crop"]
+    C --> K["Classifier v16<br/>11 kelas nominal"]
+    K --> V["Majority vote<br/>antar frame"]
+    V --> S["Suara:<br/>'Lima puluh ribu rupiah'"]
+
+    style L fill:#E0B374,stroke:#8C6A3F,color:#0D0D0D
+    style K fill:#E0B374,stroke:#8C6A3F,color:#0D0D0D
+    style S fill:#E0B374,stroke:#8C6A3F,color:#0D0D0D
+```
+
+---
+
+### ◼ MENJALANKAN SECARA LOKAL
 
 > Dokumen ini untuk menjalankan tiap komponen **langsung di mesin** (tanpa Docker).
 > Untuk jalan cepat pakai container, lihat **[README-DOCKER.md](README-DOCKER.md)**.
 
-### Prasyarat
+#### Prasyarat
 
 | Butuh | Versi | Untuk |
 |:--|:--|:--|
@@ -105,7 +130,7 @@ Tidak harus semua dijalankan sekaligus. Backend + mobile sudah cukup untuk menco
 
 ---
 
-### 1. Backend (Go)
+#### 1. Backend (Go)
 
 ```sh
 cd elior-backend-go
@@ -142,7 +167,7 @@ Cek jalan: `curl http://localhost:8080/` → `{"status":"ok"}`
 
 ---
 
-### 2. Mobile (React Native / Expo)
+#### 2. Mobile (React Native / Expo)
 
 ```sh
 cd elior-mobile
@@ -190,7 +215,7 @@ Login email/password jalan tanpa setup tambahan. Kalau mau Google Sign-In, kamu 
 
 ---
 
-### 3. Web (Next.js)
+#### 3. Web (Next.js)
 
 ```sh
 cd elior-web
@@ -203,7 +228,7 @@ Buka `http://localhost:3000`.
 
 ---
 
-### 4. Inference (Gradio + YOLO + Qwen)
+#### 4. Inference (Gradio + YOLO + Qwen)
 
 ```sh
 cd elior-inference
@@ -224,7 +249,7 @@ Saat pertama dijalankan, model ter-download otomatis:
 
 ---
 
-### 5. Proxy (FastAPI)
+#### 5. Proxy (FastAPI)
 
 ```sh
 cd elior-proxy
@@ -253,46 +278,10 @@ Balasan:
 
 ---
 
-## Model
-
-| Model | Tugas | Diambil dari |
-|:--|:--|:--|
-| MobileNetV4 localizer v4 | Bounding box uang | `elior-mobile/assets/models/localizer_v4.tflite` (di repo) |
-| MobileNetV4 classifier v16 | Nominal rupiah, 11 kelas | `elior-mobile/assets/models/classifier_v16.tflite` (di repo) |
-| YOLOv11n | Deteksi objek umum (COCO) | [`arkhangelos/elior-yolo`](https://huggingface.co/arkhangelos/elior-yolo) |
-| Qwen2.5-VL-3B | Caption Bahasa Indonesia | HuggingFace Hub |
-| BLIP-2 (fine-tuned) | Caption — pendekatan sebelumnya | [`arkhangelos/blip2-elior-fp16`](https://huggingface.co/arkhangelos/blip2-elior-fp16) |
-
-Dua model TFLite ikut di repo karena APK tidak bisa dibuild tanpanya (~35MB). Bobot besar lainnya (`.pt`, `.safetensors`) diambil dari HuggingFace saat runtime — tidak disimpan di git.
-
-Notebook training ada di [`notebooks/`](notebooks). **API key di dalamnya sudah dikosongkan** — isi sendiri sebelum menjalankan.
-
----
-
-## Alur Dua Tahap Mode Uang
-
-Deteksi rupiah tidak memakai satu model, tapi dua yang berurutan — sepenuhnya on-device:
-
-```mermaid
-%%{init: {'theme':'base','themeVariables':{'primaryColor':'#E0B374','primaryTextColor':'#0D0D0D','primaryBorderColor':'#8C6A3F','lineColor':'#E0B374','secondaryColor':'#2A2A2A','tertiaryColor':'#1A1A1A','fontFamily':'ui-sans-serif, system-ui, sans-serif'}}}%%
-flowchart LR
-    F["Frame kamera"] --> L["Localizer v4<br/>single-class bbox"]
-    L --> C["Crop"]
-    C --> K["Classifier v16<br/>11 kelas nominal"]
-    K --> V["Majority vote<br/>antar frame"]
-    V --> S["Suara:<br/>'Lima puluh ribu rupiah'"]
-
-    style L fill:#E0B374,stroke:#8C6A3F,color:#0D0D0D
-    style K fill:#E0B374,stroke:#8C6A3F,color:#0D0D0D
-    style S fill:#E0B374,stroke:#8C6A3F,color:#0D0D0D
-```
-
-Berjalan lewat frame processor worklet (`useFrameProcessor` + `runAtTargetFps(10)`), bukan polling screenshot.
-
 ---
 
 <div align="center">
 
-**Dibangun untuk yang tidak bisa melihat, tapi tetap ingin tahu.**
+<sub>Dibangun untuk yang tidak bisa melihat, tapi tetap ingin tahu.</sub>
 
 </div>
